@@ -1,0 +1,27 @@
+{
+  "id": "fga-character-popup",
+  "title": "FGA Character Popup",
+  "description": "Shows a big floating character portrait on screen when that character speaks in chat, gets bloodied/healed/revived, or has a classified buff/debuff applied — with per-player size/position/flip settings and GM-controlled rules.",
+  "version": "2026.09.21.13",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "authors": [
+    { "name": "Mogie" }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/popup.css",
+    "styles/settings.css"
+  ],
+  "relationships": {
+    "recommends": [
+      { "id": "lib-wrapper", "type": "module", "reason": "Not required by v1, but handy if we later need to safely patch core chat behavior." },
+      { "id": "socketlib", "type": "module", "reason": "Not required by v1 (popups are purely client-side), but useful if we later add cross-client sync." }
+    ]
+  },
+  "readme": "README.md"
+}

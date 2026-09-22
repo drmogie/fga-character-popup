@@ -1,0 +1,64 @@
+<div class="ccp-settings-body">
+  <p class="hint">These settings only affect your own screen — everyone at the table can set their popup differently.</p>
+
+  {{#if overrideNote}}
+  <p class="hint ccp-override-note">{{overrideNote}}</p>
+  {{/if}}
+
+  <div class="form-group">
+    <label>Preview (only visible to you)</label>
+    <div class="ccp-preview-box">
+      <div class="ccp-preview-thumb" id="ccp-preview-thumb">
+        <img id="ccp-preview-img" src="{{previewImg}}" alt="Preview">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Image Scale: <span id="ccp-scale-output">{{scale}}x</span></label>
+    <input type="range" id="ccp-scale-range" name="scale" min="0.5" max="3" step="0.1" value="{{scale}}">
+  </div>
+
+  <div class="form-group">
+    <label>Image Source <span class="ccp-always-yours">{{imageSourceNote}}</span></label>
+    <select name="imageSource">
+      {{#each imageSources}}
+      <option value="{{key}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Position</label>
+    <select name="positionPreset">
+      {{#each positionPresets}}
+      <option value="{{key}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="form-group ccp-custom-position">
+    <label>Custom X (%)</label>
+    <input type="range" id="ccp-x-range" min="0" max="100" step="1" value="{{positionX}}">
+    <input type="number" id="ccp-x-number" name="positionX" min="0" max="100" value="{{positionX}}">
+
+    <label>Custom Y (%)</label>
+    <input type="range" id="ccp-y-range" min="0" max="100" step="1" value="{{positionY}}">
+    <input type="number" id="ccp-y-number" name="positionY" min="0" max="100" value="{{positionY}}">
+
+    <p class="hint">Only used when Position above is set to "Custom (use sliders below)".</p>
+  </div>
+
+  <div class="form-group">
+    <label><input type="checkbox" name="flipHorizontal" {{#if flipHorizontal}}checked{{/if}}> Flip horizontally (mirror)</label>
+    <label><input type="checkbox" name="flipVertical" {{#if flipVertical}}checked{{/if}}> Flip vertically (upside down)</label>
+  </div>
+
+  <div class="form-group">
+    <label><input type="checkbox" name="fadeOut" {{#if fadeOut}}checked{{/if}}> Fade out smoothly (unchecked = vanish instantly)</label>
+  </div>
+
+  <footer class="form-footer">
+    <button type="submit"><i class="fa-solid fa-save"></i> Save</button>
+  </footer>
+</div>
