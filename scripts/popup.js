@@ -164,6 +164,7 @@ function buildChatBubble(actor, text, tailBucket) {
   const bubble = document.createElement("div");
   bubble.id = BUBBLE_ID;
   bubble.classList.add("ccp-chat-bubble");
+  if (game.settings.get(MODULE_ID, "chatBubbleInverted")) bubble.classList.add("ccp-bubble-inverted");
   bubble.dataset.tail = tailBucket;
   bubble.style.setProperty("--ccp-bubble-width", `${style.widthPx}px`);
   bubble.style.setProperty("--ccp-bubble-height", `${style.heightPx}px`);

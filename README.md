@@ -82,6 +82,7 @@ Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (
   - **The bubble box itself never moves — only its tail does.** The tail points left, center, or right depending on which third of the screen *that viewer's own* popup is positioned in (each player can have a different position, so the tail direction is computed per-viewer from their own popup settings — not a single shared position the way Scene Director's staged characters work).
   - **GM-configurable size.** Two sliders in Configure Popup Rules (Bubble width, Bubble min height) control the box's dimensions, with a live static preview right there in the settings form (always shown with a centered tail, since the real tail direction depends on each viewer's own position).
   - Implementation: `main.js`'s `extractChatText()` strips a chat message's HTML down to plain text and hands it to `showCharacterPopup` as `options.chatText`; `popup.js` builds the bubble alongside the portrait and ties its fade-out/removal to the exact same timing the portrait already uses (respecting each player's own Fade Out vs. Vanish Instantly choice, and "no timeout").
+- **`2026.09.23.2`** — New GM checkbox in Configure Popup Rules: **"Invert bubble colors (white bubble, black text)"** — swaps the chat bubble from its default look (black bubble, white text) to the opposite (white bubble, black text). New world setting `chatBubbleInverted` (default off), applied in `popup.js`'s `buildChatBubble()` via a `.ccp-bubble-inverted` class, with matching color overrides for the bubble body and its tail in `styles/popup.css`. The settings-form preview updates live as the checkbox is toggled, same pattern as every other live preview in this form.
 
 ## Things worth double-checking once you can test this live
 
@@ -95,4 +96,5 @@ Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (
 
 ## Version numbering
 
-Version format is `YYYY.MM.DD.#` — so `2026.09.23.1` means the first build made on September 23, 2026.
+Version format is `YYYY.MM.DD.#` — so `2026.09.23.2` means the second build made on September 23, 2026.
+

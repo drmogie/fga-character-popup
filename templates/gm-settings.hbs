@@ -84,12 +84,16 @@
     <div class="form-group">
       <label>Preview (only visible to you)</label>
       <div class="ccp-bubble-preview-box">
-        <div class="ccp-chat-bubble ccp-chat-bubble-static" id="ccp-bubble-preview" data-tail="center" style="--ccp-bubble-height: {{chatBubbleHeight}}px;">
+        <div class="ccp-chat-bubble ccp-chat-bubble-static{{#if chatBubbleInverted}} ccp-bubble-inverted{{/if}}" id="ccp-bubble-preview" data-tail="center" style="--ccp-bubble-height: {{chatBubbleHeight}}px;">
           <span class="ccp-bubble-name">{{previewName}}:</span>
           <span class="ccp-bubble-text">This is what a chat bubble line looks like.</span>
         </div>
       </div>
       <p class="hint">The bubble itself always stays fixed top-center — only its tail moves, pointing left/center/right toward whichever side of the screen that viewer's own popup is positioned on. This preview always shows it centered.</p>
+    </div>
+
+    <div class="form-group">
+      <label><input type="checkbox" name="chatBubbleInverted" {{#if chatBubbleInverted}}checked{{/if}}> Invert bubble colors (white bubble, black text) instead of the default black bubble with white text</label>
     </div>
 
     <div class="form-group">

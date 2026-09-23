@@ -167,6 +167,14 @@ function registerGMSettings() {
     type: Object,
     default: DEFAULT_CHAT_BUBBLE_STYLE
   });
+  // Color scheme: default is white text on a black bubble; inverted flips
+  // it to black text on a white bubble. See popup.js's buildChatBubble.
+  game.settings.register(MODULE_ID, "chatBubbleInverted", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
 
   game.settings.registerMenu(MODULE_ID, "gmSettingsMenu", {
     name: "Popup Rules (GM Only)",

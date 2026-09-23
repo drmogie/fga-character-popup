@@ -210,6 +210,16 @@
   opacity: 0;
 }
 
+/* Color-invert toggle (GM Rules > chat bubble) — swaps white-text-on-black
+   for black-text-on-white. Overrides the base colors above; the tail's
+   matching override sits right after the tail rules below it, since the
+   tail's border-colors need the same flip. */
+.ccp-chat-bubble.ccp-bubble-inverted {
+  background: rgba(248, 248, 248, 0.94);
+  border-color: rgba(0, 0, 0, 0.18);
+  color: #141414;
+}
+
 .ccp-bubble-name {
   font-weight: 700;
   flex: 0 0 auto;
@@ -239,6 +249,14 @@
 .ccp-chat-bubble::after {
   margin-top: -1px;
   border-color: rgba(10, 10, 14, 0.92) transparent transparent transparent;
+}
+
+.ccp-chat-bubble.ccp-bubble-inverted::before {
+  border-color: rgba(0, 0, 0, 0.18) transparent transparent transparent;
+}
+
+.ccp-chat-bubble.ccp-bubble-inverted::after {
+  border-color: rgba(248, 248, 248, 0.94) transparent transparent transparent;
 }
 
 .ccp-chat-bubble[data-tail="center"]::before {

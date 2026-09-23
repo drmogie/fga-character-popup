@@ -50,6 +50,7 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
       chatBubbleHeight:
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
+      chatBubbleInverted: game.settings.get(MODULE_ID, "chatBubbleInverted"),
 
       previewImg: game.user.character?.img || FALLBACK_IMAGE,
       previewName: game.user.character?.name || "Character"
@@ -120,6 +121,14 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     bubbleWidthRange?.addEventListener("input", syncBubblePreview);
     bubbleHeightRange?.addEventListener("input", syncBubblePreview);
+
+    const bubbleInvertCheckbox = root.querySelector("input[name='chatBubbleInverted']");
+    const toggleBubbleInvertPreview = () => {
+      if (!bubblePreview || !bubbleInvertCheckbox) return;
+      bubblePreview.classList.toggle("ccp-bubble-inverted", bubbleInvertCheckbox.checked);
+    };
+    bubbleInvertCheckbox?.addEventListener("change", toggleBubbleInvertPreview);
+    toggleBubbleInvertPreview();
   }
 
   static async #onSubmit(_event, _form, formData) {
@@ -150,6 +159,7 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
       widthPx: data.chatBubbleWidth !== undefined ? Number(data.chatBubbleWidth) : current.widthPx,
       heightPx: data.chatBubbleHeight !== undefined ? Number(data.chatBubbleHeight) : current.heightPx
     });
+    await game.settings.set(MODULE_ID, "chatBubbleInverted", !!data.chatBubbleInverted);
 
     ui.notifications.info("FGA Character Popup: GM rules saved.");
   }
