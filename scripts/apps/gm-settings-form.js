@@ -4,7 +4,20 @@
 // NPC groups, or a specific character) live in their own separate window
 // now — see appearance-overrides-form.js / "Configure Character Appearance".
 
-import { MODULE_ID, FALLBACK_IMAGE, DEFAULT_CHAT_BUBBLE_STYLE } from "../constants.js";
+import {
+  MODULE_ID,
+  FALLBACK_IMAGE,
+  DEFAULT_CHAT_BUBBLE_STYLE,
+  DEFAULT_CHAT_BUBBLE_COLOR,
+  invertHexColor,
+  hexToRgb
+} from "../constants.js";
+
+/** A semi-transparent border shade derived from the bubble's foreground (text) color — matches popup.js's own. */
+function hexToBorderRgba(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, 0.35)`;
+}
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -50,7 +63,11 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
       chatBubbleHeight:
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
-      chatBubbleInverted: game.settings.get(MODULE_ID, "chatBubbleInverted"),
+      chatBubbleColor: (() => {
+        const color = game.settings.get(MODULE_ID, "chatBubbleColor") ?? DEFAULT_CHAT_BUBBLE_COLOR;
+        const fg = invertHexColor(color);
+        return { color, fg, border: hexToBorderRgba(fg) };
+      })(),
 
       previewImg: game.user.character?.img || FALLBACK_IMAGE,
       previewName: game.user.character?.name || "Character"
@@ -122,13 +139,17 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
     bubbleWidthRange?.addEventListener("input", syncBubblePreview);
     bubbleHeightRange?.addEventListener("input", syncBubblePreview);
 
-    const bubbleInvertCheckbox = root.querySelector("input[name='chatBubbleInverted']");
-    const toggleBubbleInvertPreview = () => {
-      if (!bubblePreview || !bubbleInvertCheckbox) return;
-      bubblePreview.classList.toggle("ccp-bubble-inverted", bubbleInvertCheckbox.checked);
+    const bubbleColorInput = root.querySelector("input[name='chatBubbleColor']");
+    const syncBubbleColorPreview = () => {
+      if (!bubblePreview || !bubbleColorInput) return;
+      const bg = bubbleColorInput.value;
+      const fg = invertHexColor(bg);
+      bubblePreview.style.setProperty("--ccp-bubble-bg", bg);
+      bubblePreview.style.setProperty("--ccp-bubble-fg", fg);
+      bubblePreview.style.setProperty("--ccp-bubble-border", hexToBorderRgba(fg));
     };
-    bubbleInvertCheckbox?.addEventListener("change", toggleBubbleInvertPreview);
-    toggleBubbleInvertPreview();
+    bubbleColorInput?.addEventListener("input", syncBubbleColorPreview);
+    syncBubbleColorPreview();
   }
 
   static async #onSubmit(_event, _form, formData) {
@@ -159,7 +180,11 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
       widthPx: data.chatBubbleWidth !== undefined ? Number(data.chatBubbleWidth) : current.widthPx,
       heightPx: data.chatBubbleHeight !== undefined ? Number(data.chatBubbleHeight) : current.heightPx
     });
-    await game.settings.set(MODULE_ID, "chatBubbleInverted", !!data.chatBubbleInverted);
+    await game.settings.set(
+      MODULE_ID,
+      "chatBubbleColor",
+      data.chatBubbleColor || DEFAULT_CHAT_BUBBLE_COLOR
+    );
 
     ui.notifications.info("FGA Character Popup: GM rules saved.");
   }

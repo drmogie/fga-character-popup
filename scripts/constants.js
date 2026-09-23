@@ -54,3 +54,29 @@ export const FALLBACK_IMAGE = "icons/svg/mystery-man.svg";
 // Default size for the optional chat-bubble overlay (see chatBubbleStyle
 // setting, popup.js's buildChatBubble, and the GM Rules form).
 export const DEFAULT_CHAT_BUBBLE_STYLE = { widthPx: 420, heightPx: 90 };
+
+// Default chat-bubble background color (see chatBubbleColor setting) —
+// text color is always computed as this color's RGB inverse, never set
+// separately. Shared by popup.js (the real bubble) and gm-settings-form.js
+// (the settings-form preview), so both compute the same inverse the same way.
+export const DEFAULT_CHAT_BUBBLE_COLOR = "#0a0a0e";
+
+/** "#rgb" or "#rrggbb" -> {r, g, b} (0-255 each). */
+export function hexToRgb(hex) {
+  const clean = (hex ?? "").replace("#", "").trim();
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean.padEnd(6, "0").slice(0, 6);
+  const num = parseInt(full, 16) || 0;
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+/** {r, g, b} (0-255 each) -> "#rrggbb". */
+export function rgbToHex({ r, g, b }) {
+  const toHex = (c) => Math.max(0, Math.min(255, c)).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/** The literal RGB inverse of a "#rrggbb" color — e.g. black <-> white. */
+export function invertHexColor(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToHex({ r: 255 - r, g: 255 - g, b: 255 - b });
+}

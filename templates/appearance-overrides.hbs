@@ -1,9 +1,9 @@
 <div class="ccp-settings-body ccp-overrides-body">
-  <p class="hint">Pick a target on the left, then set its look on the right. Nothing here takes effect until a target's mode is switched to an override.</p>
+  <p class="hint">Placement, size, flip, and fade timing are all GM-controlled now — pick a target on the left, then set its look on the right. The Shared Default always applies to every player character unless you give one a custom override below.</p>
 
   <div class="ccp-overrides-layout">
     <div class="ccp-overrides-list">
-      <p class="ccp-overrides-heading">Shared Defaults</p>
+      <p class="ccp-overrides-heading">Defaults</p>
       {{#each entries}}
       <button type="button" data-entry-id="{{id}}" class="{{#if selected}}active{{/if}}">{{label}}</button>
       {{/each}}
@@ -17,6 +17,7 @@
     <div class="ccp-overrides-detail">
       <h3>{{selectedLabel}}</h3>
 
+      {{#if showModeSelector}}
       <div class="form-group">
         <label>Mode</label>
         <select name="entryMode">
@@ -25,6 +26,7 @@
           {{/each}}
         </select>
       </div>
+      {{/if}}
 
       <div class="ccp-ov-fields">
         <div class="form-group">

@@ -2,33 +2,34 @@
 // source) actually applies for a given actor's popup. Configured from the
 // "Configure Character Appearance" GM window, which edits three settings:
 //
-//   genericPlayerOverride   — the shared default for every player character
+//   genericPlayerOverride   — the shared default every player character uses
 //   npcDispositionOverrides — one bucket each for Hostile / Neutral / Friendly NPCs
 //   perActorSettings        — per-character overrides, player characters only
 //
-// For a player character, in order:
+// Placement/size/flip/fade timing are ALL GM-only — there's no such thing
+// as "each viewer's own settings" for those anymore, so resolution is a
+// simple two-step lookup:
+//
+// For a player character:
 //   1. perActorSettings[actor.id].mode === "override" — a custom look just
-//      for this character, wins over everything else.
-//   2. perActorSettings[actor.id].mode === "player" — an explicit "always
-//      use this player's own settings," bypassing the Generic Player
-//      override even if it's on.
-//   3. Otherwise (mode "gm", or no entry at all): follow whatever the
-//      Generic Player bucket currently resolves to — either its own
-//      "override" look, or (if it's set to "player") each viewer's own
-//      individual settings.
+//      for this one character, for the occasional case that needs it.
+//   2. Otherwise: the shared default from genericPlayerOverride.
 //
 // For an NPC: whichever of the three disposition buckets matches the
 // actor's own token disposition (Foundry's own field), if that bucket has
-// been turned on; otherwise the module's built-in default look.
+// been turned on; otherwise the module's built-in fallback look.
 //
-// Image source (portrait vs. token) works the same way at every level: an
-// override can optionally pin one, but leaving it blank always falls back
-// to whichever image source THIS VIEWER has personally chosen — so a GM
-// standardizing size/position for the table doesn't take anyone's own art
-// preference away unless they deliberately pin one.
+// Image source (portrait vs. token) is the one exception — it's still the
+// viewer's own choice (see player-settings-form.js). An override can
+// optionally pin one anyway, but leaving it blank always falls back to
+// whichever image source THIS VIEWER has personally chosen.
 
 import { MODULE_ID } from "./constants.js";
 
+// Fallback look for an NPC with no matching disposition-bucket override —
+// the module's own built-in default, never GM-edited directly. Player
+// characters never fall through to this; they always resolve through
+// genericPlayerOverride instead (see resolveGenericPlayer below).
 const MODULE_DEFAULT_FIELDS = {
   scale: 1,
   positionPreset: "bottom-right",
@@ -53,27 +54,14 @@ export function getDispositionKey(actor) {
   return "neutral";
 }
 
-function viewerImageSource() {
+/** The one appearance field still owned by the viewer, not the GM. */
+export function viewerImageSource() {
   return game.settings.get(MODULE_ID, "imageSource");
 }
 
 /** An override's imageSource field is "" (inherit) unless the GM pinned one. */
 function resolveImageSource(overrideImageSource) {
   return overrideImageSource || viewerImageSource();
-}
-
-function ownSettings(overriddenBy = null) {
-  return {
-    scale: game.settings.get(MODULE_ID, "scale"),
-    positionPreset: game.settings.get(MODULE_ID, "positionPreset"),
-    positionX: game.settings.get(MODULE_ID, "positionX"),
-    positionY: game.settings.get(MODULE_ID, "positionY"),
-    flipHorizontal: game.settings.get(MODULE_ID, "flipHorizontal"),
-    flipVertical: game.settings.get(MODULE_ID, "flipVertical"),
-    fadeOut: game.settings.get(MODULE_ID, "fadeOut"),
-    imageSource: resolveImageSource(null),
-    overriddenBy
-  };
 }
 
 function moduleDefault() {
@@ -98,10 +86,17 @@ function fieldsFrom(entry, overriddenBy) {
   };
 }
 
+/**
+ * The shared default every player character uses. genericPlayerOverride
+ * used to carry an optional "mode" ("player" vs "override") from back when
+ * players had their own settings to fall back to — that field may still be
+ * sitting in old saved data, but it's never read anymore: these fields
+ * always apply now, unconditionally, unless a specific character has its
+ * own perActorSettings override (see getEffectiveAppearance).
+ */
 function resolveGenericPlayer() {
-  const generic = game.settings.get(MODULE_ID, "genericPlayerOverride");
-  if (generic?.mode === "override") return fieldsFrom(generic, "global");
-  return ownSettings(null);
+  const generic = game.settings.get(MODULE_ID, "genericPlayerOverride") ?? {};
+  return fieldsFrom({ ...MODULE_DEFAULT_FIELDS, imageSource: "", ...generic }, "shared-default");
 }
 
 export function getEffectiveAppearance(actor) {
@@ -112,8 +107,7 @@ export function getEffectiveAppearance(actor) {
     const entry = actor ? perActor[actor.id] : null;
 
     if (entry?.mode === "override") return fieldsFrom(entry, "character");
-    if (entry?.mode === "player") return ownSettings(null);
-    return resolveGenericPlayer(); // mode "gm", or no entry — follow the Generic Player bucket
+    return resolveGenericPlayer(); // no entry, or an old "gm"/"player" mode value — both mean "use the shared default"
   }
 
   const bucketKey = getDispositionKey(actor);

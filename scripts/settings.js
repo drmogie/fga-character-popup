@@ -2,7 +2,7 @@
 // buttons (one for players, two GM-only) that open the nice GUI forms
 // instead of Foundry's plain default settings list.
 
-import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE, DEFAULT_CHAT_BUBBLE_COLOR } from "./constants.js";
 import { PlayerSettingsForm } from "./apps/player-settings-form.js";
 import { GMSettingsForm } from "./apps/gm-settings-form.js";
 import { AppearanceOverridesForm } from "./apps/appearance-overrides-form.js";
@@ -16,51 +16,11 @@ export function registerSettings() {
   registerStatusIconSettings();
 }
 
+// Position, size, flip, and fade timing used to live here as per-player
+// (client-scoped) settings — they're all GM-only now (see "Configure
+// Character Appearance"), so the only thing left that's always the
+// viewer's own choice is which image shows.
 function registerPlayerSettings() {
-  // config: false on all of these — they're edited through the GUI form,
-  // not Foundry's default settings list, so we don't want duplicate entries.
-  game.settings.register(MODULE_ID, "scale", {
-    scope: "client",
-    config: false,
-    type: Number,
-    default: 1
-  });
-  game.settings.register(MODULE_ID, "positionPreset", {
-    scope: "client",
-    config: false,
-    type: String,
-    default: "bottom-right"
-  });
-  game.settings.register(MODULE_ID, "positionX", {
-    scope: "client",
-    config: false,
-    type: Number,
-    default: 80
-  });
-  game.settings.register(MODULE_ID, "positionY", {
-    scope: "client",
-    config: false,
-    type: Number,
-    default: 60
-  });
-  game.settings.register(MODULE_ID, "flipHorizontal", {
-    scope: "client",
-    config: false,
-    type: Boolean,
-    default: false
-  });
-  game.settings.register(MODULE_ID, "flipVertical", {
-    scope: "client",
-    config: false,
-    type: Boolean,
-    default: false
-  });
-  game.settings.register(MODULE_ID, "fadeOut", {
-    scope: "client",
-    config: false,
-    type: Boolean,
-    default: true
-  });
   game.settings.register(MODULE_ID, "imageSource", {
     scope: "client",
     config: false,
@@ -71,7 +31,7 @@ function registerPlayerSettings() {
   game.settings.registerMenu(MODULE_ID, "playerSettingsMenu", {
     name: "Popup Appearance",
     label: "Configure Your Popup",
-    hint: "Choose the size, position, flip, and image source for your own popup. Only affects your screen (unless the GM has turned on an appearance override that applies to you).",
+    hint: "Choose which image (portrait or token) shows on your own popup. Everything else — size, position, flip, and fade timing — is set by the GM.",
     icon: "fa-solid fa-image",
     type: PlayerSettingsForm,
     restricted: false
@@ -167,13 +127,15 @@ function registerGMSettings() {
     type: Object,
     default: DEFAULT_CHAT_BUBBLE_STYLE
   });
-  // Color scheme: default is white text on a black bubble; inverted flips
-  // it to black text on a white bubble. See popup.js's buildChatBubble.
-  game.settings.register(MODULE_ID, "chatBubbleInverted", {
+  // Bubble background color, as a "#rrggbb" hex string — text color is
+  // never stored separately, it's always computed as this color's literal
+  // RGB inverse at render time (see constants.js's invertHexColor and
+  // popup.js's buildChatBubble).
+  game.settings.register(MODULE_ID, "chatBubbleColor", {
     scope: "world",
     config: false,
-    type: Boolean,
-    default: false
+    type: String,
+    default: DEFAULT_CHAT_BUBBLE_COLOR
   });
 
   game.settings.registerMenu(MODULE_ID, "gmSettingsMenu", {
@@ -186,17 +148,21 @@ function registerGMSettings() {
   });
 }
 
-// The GM's appearance-control window: a shared default for players, one
-// bucket each for Hostile/Neutral/Friendly NPCs, and per-character
-// overrides for individual player characters. See appearance.js for how
-// these three settings are resolved into what actually shows on screen.
+// The GM's appearance-control window: a shared default that applies to
+// every player character, one bucket each for Hostile/Neutral/Friendly
+// NPCs, and per-character overrides for individual player characters. See
+// appearance.js for how these three settings are resolved into what
+// actually shows on screen. Placement/size/flip/fade are ALL GM-only now —
+// "genericPlayerOverride" is no longer optional (its old "mode" field is
+// kept in saved data for backward compatibility but is never read anymore;
+// its fields always apply as the shared default unless a specific
+// character has its own "override" entry in perActorSettings).
 function registerAppearanceOverrideSettings() {
   game.settings.register(MODULE_ID, "genericPlayerOverride", {
     scope: "world",
     config: false,
     type: Object,
     default: {
-      mode: "player",
       scale: 1,
       positionPreset: "bottom-right",
       positionX: 80,
@@ -217,8 +183,10 @@ function registerAppearanceOverrideSettings() {
     default: {}
   });
 
-  // Keyed by actor id — individual player-character overrides.
-  // {"<actorId>": {mode: "gm"|"player"|"override", scale, positionPreset,
+  // Keyed by actor id — individual player-character overrides, for the
+  // occasional character whose popup needs to look different from the
+  // shared default (e.g. a bigger portrait for one specific PC).
+  // {"<actorId>": {mode: "gm"|"override", scale, positionPreset,
   //                positionX, positionY, flipHorizontal, flipVertical,
   //                fadeOut, imageSource}, ...}
   game.settings.register(MODULE_ID, "perActorSettings", {
@@ -231,7 +199,7 @@ function registerAppearanceOverrideSettings() {
   game.settings.registerMenu(MODULE_ID, "appearanceOverridesMenu", {
     name: "Appearance Overrides (GM Only)",
     label: "Configure Character Appearance",
-    hint: "Fine-tune exactly how each group or individual character's popup looks — pick a target on the left, then set its look on the right.",
+    hint: "Set the shared default look every player character uses, tweak individual characters or NPC groups that need something different, and pick a target on the left to get started.",
     icon: "fa-solid fa-people-arrows",
     type: AppearanceOverridesForm,
     restricted: true

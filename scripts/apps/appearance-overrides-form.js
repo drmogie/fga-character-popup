@@ -1,22 +1,23 @@
 // The GM-only "Configure Character Appearance" window: a two-pane GUI for
 // fine-grained control over popup looks. The left list has every
-// controllable target; the right side shows that target's own mode and
-// fields.
+// controllable target; the right side shows that target's fields (and, for
+// the two group-shaped targets below, its own mode).
 //
-// Three modes, meaning depends on the target:
-//   - Generic Player:      "player" (everyone uses their own settings) or
-//                           "override" (GM sets one shared look for every
-//                           player character).
+// "Shared Default" has no mode anymore — placement/size/flip/fade are all
+// GM-only now, so its fields always apply to every player character,
+// unconditionally. There's no more "each player uses their own settings"
+// option, since players don't have their own settings for these fields.
+//
+// Two modes remain, meaning depends on the target:
 //   - An NPC disposition
 //     bucket (Hostile/
 //     Neutral/Friendly):    "default" (the module's built-in look) or
 //                           "override" (a custom look for that whole group).
 //   - An individual
-//     character:            "gm" (follow whatever Generic Player currently
-//                           resolves to), "player" (always use that
-//                           viewer's own settings, bypassing any GM
-//                           override), or "override" (a custom look just
-//                           for this one character).
+//     character:            "gm" (follow the Shared Default), or "override"
+//                           (a custom look just for this one character —
+//                           for the occasional character that needs
+//                           something different, e.g. a bigger portrait).
 //
 // Everything is edited in an in-memory working copy so switching between
 // targets in the list doesn't lose unsaved edits on the one you switched
@@ -51,18 +52,15 @@ const DEFAULT_FIELDS = {
   imageSource: ""
 };
 
+// No "generic" entry here anymore — Shared Default has no mode selector at
+// all, its fields always apply (see the file header comment above).
 const MODE_OPTIONS = {
-  generic: [
-    { key: "player", label: "Each player uses their own settings" },
-    { key: "override", label: "GM sets one shared look for every player" }
-  ],
   "npc-bucket": [
     { key: "default", label: "Use the module's default appearance" },
     { key: "override", label: "Set a custom look for this group" }
   ],
   actor: [
-    { key: "gm", label: "Follow the Generic Player setting" },
-    { key: "player", label: "Always use this player's own settings (ignore GM overrides)" },
+    { key: "gm", label: "Use the Shared Default" },
     { key: "override", label: "Set a custom look just for this character" }
   ]
 };
@@ -100,7 +98,9 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
     this._working = {};
 
     const generic = game.settings.get(MODULE_ID, "genericPlayerOverride") ?? {};
-    this._working["generic-player"] = { mode: "player", ...DEFAULT_FIELDS, ...generic };
+    // "mode" is irrelevant for this target now (see file header) — kept in
+    // the working copy only so toSavedShape() has a consistent shape to write.
+    this._working["generic-player"] = { mode: "override", ...DEFAULT_FIELDS, ...generic };
 
     const npcSaved = game.settings.get(MODULE_ID, "npcDispositionOverrides") ?? {};
     for (const bucket of DISPOSITION_BUCKETS) {
@@ -122,7 +122,7 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
   }
 
   _entryLabel(id) {
-    if (id === "generic-player") return "Generic Player";
+    if (id === "generic-player") return "Shared Default";
     const bucket = DISPOSITION_BUCKETS.find((b) => b.id === id);
     if (bucket) return bucket.label;
     return game.actors.get(id)?.name ?? "Unknown Character";
@@ -144,7 +144,7 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
 
     const actors = playerActors();
     const entries = [
-      { id: "generic-player", label: "Generic Player", selected: this._selectedId === "generic-player" },
+      { id: "generic-player", label: "Shared Default", selected: this._selectedId === "generic-player" },
       ...DISPOSITION_BUCKETS.map((b) => ({ id: b.id, label: b.label, selected: this._selectedId === b.id }))
     ];
     const actorEntries = actors.map((a) => ({
@@ -156,12 +156,14 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
     const type = this._entryType(this._selectedId);
     const entry = this._working[this._selectedId] ?? { mode: "gm", ...DEFAULT_FIELDS };
     const preset = entry.positionPreset ?? "bottom-right";
+    const showModeSelector = type !== "generic";
 
     return {
       entries,
       actorEntries,
       selectedLabel: this._entryLabel(this._selectedId),
-      modeOptions: MODE_OPTIONS[type].map((o) => ({ ...o, selected: o.key === entry.mode })),
+      showModeSelector,
+      modeOptions: showModeSelector ? MODE_OPTIONS[type].map((o) => ({ ...o, selected: o.key === entry.mode })) : [],
       scale: entry.scale,
       positionPresets: buildPositionPresetOptions(preset),
       positionX: entry.positionX,
@@ -196,10 +198,17 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
     positionSelect?.addEventListener("change", toggleCustomRow);
     toggleCustomRow();
 
+    // "Shared Default" has no mode selector at all (see file header) — its
+    // fields section is always shown. Every other target still toggles its
+    // fields on/off based on whether its mode is set to "override".
     const modeSelect = root.querySelector("select[name='entryMode']");
     const fieldsSection = root.querySelector(".ccp-ov-fields");
     const toggleFields = () => {
-      if (!fieldsSection || !modeSelect) return;
+      if (!fieldsSection) return;
+      if (!modeSelect) {
+        fieldsSection.style.display = "";
+        return;
+      }
       fieldsSection.style.display = modeSelect.value === "override" ? "" : "none";
     };
     modeSelect?.addEventListener("change", toggleFields);
@@ -212,7 +221,9 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
     root.querySelectorAll(".ccp-overrides-list button[data-entry-id]").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (this._selectedId) {
-          this._working[this._selectedId] = readEntryFields(root, modeSelect?.value ?? "gm");
+          // No mode selector on screen means the target being left is
+          // "Shared Default," which is always effectively "override".
+          this._working[this._selectedId] = readEntryFields(root, modeSelect?.value ?? "override");
         }
         this._selectedId = btn.dataset.entryId;
         this.render();
@@ -229,7 +240,10 @@ export class AppearanceOverridesForm extends HandlebarsApplicationMixin(Applicat
     // persisting — covers the case where the GM never touched the list, so
     // there was no switch-triggered sync to capture their edits.
     if (this._selectedId) {
-      this._working[this._selectedId] = readEntryFieldsFromData(data, data.entryMode);
+      // "Shared Default" submits with no entryMode field at all (no
+      // selector rendered for it) — that always means "override" (its
+      // fields always apply unconditionally).
+      this._working[this._selectedId] = readEntryFieldsFromData(data, data.entryMode ?? "override");
     }
 
     const generic = this._working["generic-player"];

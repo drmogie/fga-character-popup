@@ -3,7 +3,7 @@
 // window) since we don't want title bars or resize handles — just an image
 // that appears, sits where it's configured to, and goes away again.
 
-import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE, DEFAULT_CHAT_BUBBLE_COLOR, invertHexColor, hexToRgb } from "./constants.js";
 import { applyPositionStyle } from "./position.js";
 import { getEffectiveAppearance } from "./appearance.js";
 
@@ -160,14 +160,18 @@ function getTailBucket(appearance) {
  */
 function buildChatBubble(actor, text, tailBucket) {
   const style = game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE;
+  const bgColor = game.settings.get(MODULE_ID, "chatBubbleColor") ?? DEFAULT_CHAT_BUBBLE_COLOR;
+  const fgColor = invertHexColor(bgColor);
 
   const bubble = document.createElement("div");
   bubble.id = BUBBLE_ID;
   bubble.classList.add("ccp-chat-bubble");
-  if (game.settings.get(MODULE_ID, "chatBubbleInverted")) bubble.classList.add("ccp-bubble-inverted");
   bubble.dataset.tail = tailBucket;
   bubble.style.setProperty("--ccp-bubble-width", `${style.widthPx}px`);
   bubble.style.setProperty("--ccp-bubble-height", `${style.heightPx}px`);
+  bubble.style.setProperty("--ccp-bubble-bg", bgColor);
+  bubble.style.setProperty("--ccp-bubble-fg", fgColor);
+  bubble.style.setProperty("--ccp-bubble-border", hexToBorderRgba(fgColor));
 
   const nameSpan = document.createElement("span");
   nameSpan.classList.add("ccp-bubble-name");
@@ -180,6 +184,12 @@ function buildChatBubble(actor, text, tailBucket) {
   bubble.appendChild(nameSpan);
   bubble.appendChild(textSpan);
   return bubble;
+}
+
+/** A semi-transparent border shade derived from the bubble's foreground (text) color. */
+function hexToBorderRgba(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, 0.35)`;
 }
 
 /**
