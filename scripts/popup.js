@@ -3,9 +3,9 @@
 // window) since we don't want title bars or resize handles — just an image
 // that appears, sits where it's configured to, and goes away again.
 
-import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE, invertHexColor, hexToRgb } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE, hexToRgb } from "./constants.js";
 import { applyPositionStyle } from "./position.js";
-import { getEffectiveAppearance, actorBubbleColor } from "./appearance.js";
+import { getEffectiveAppearance, actorBubbleColor, actorBubbleTextColor } from "./appearance.js";
 
 const POPUP_ID = "ccp-popup";
 const BUBBLE_ID = "ccp-chat-bubble";
@@ -163,8 +163,10 @@ function buildChatBubble(actor, text, tailBucket) {
   // Tied to the SPEAKING character (an Actor flag, not a per-viewer
   // setting) — every viewer sees the same bubble color for this actor,
   // so color becomes a visual cue for who's talking. See appearance.js.
+  // Text color defaults to that background's inverse but can be a custom
+  // flag of its own, for the odd background where auto-invert looks off.
   const bgColor = actorBubbleColor(actor);
-  const fgColor = invertHexColor(bgColor);
+  const fgColor = actorBubbleTextColor(actor);
 
   const bubble = document.createElement("div");
   bubble.id = BUBBLE_ID;

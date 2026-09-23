@@ -4,8 +4,8 @@
 // NPC groups, or a specific character) live in their own separate window
 // now — see appearance-overrides-form.js / "Configure Character Appearance".
 
-import { MODULE_ID, FALLBACK_IMAGE, DEFAULT_CHAT_BUBBLE_STYLE, invertHexColor, hexToRgb } from "../constants.js";
-import { actorBubbleColor } from "../appearance.js";
+import { MODULE_ID, FALLBACK_IMAGE, DEFAULT_CHAT_BUBBLE_STYLE, hexToRgb } from "../constants.js";
+import { actorBubbleColor, actorBubbleTextColor } from "../appearance.js";
 
 /** A semi-transparent border shade derived from the bubble's foreground (text) color — matches popup.js's own. */
 function hexToBorderRgba(hex) {
@@ -57,15 +57,17 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
       chatBubbleHeight:
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
-      // Bubble color is tied to whichever character is speaking now (an
-      // Actor flag, not a Setting — see appearance.js) — not editable from
-      // this form. This preview just shows the GM's own assigned
-      // character's color (or the module default if they don't have one
-      // or haven't set it), purely so the width/height sliders have
-      // something to preview against.
+      // Bubble color (and text color, auto-inverse or a custom override)
+      // are tied to whichever character is speaking now (Actor flags, not
+      // Settings — see appearance.js) — not editable from this form. This
+      // preview just shows the GM's own assigned character's actual
+      // colors (or the module default if they don't have one or haven't
+      // set them), purely so the width/height sliders have something to
+      // preview against.
       chatBubbleColor: (() => {
-        const color = actorBubbleColor(game.user.character);
-        const fg = invertHexColor(color);
+        const character = game.user.character;
+        const color = actorBubbleColor(character);
+        const fg = actorBubbleTextColor(character);
         return { color, fg, border: hexToBorderRgba(fg) };
       })(),
 

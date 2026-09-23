@@ -27,8 +27,14 @@
 
   {{#if hasCharacter}}
   <div class="form-group">
-    <label>Chat Bubble Color <span class="ccp-always-yours">Your own choice for your character — everyone sees this same color when {{previewName}} talks, so people can tell who's speaking at a glance. Text color is automatically the exact inverse.</span></label>
+    <label>Chat Bubble Color <span class="ccp-always-yours">Your own choice for your character — everyone sees this same color when {{previewName}} talks, so people can tell who's speaking at a glance.</span></label>
     <input type="color" name="chatBubbleColor" value="{{chatBubbleColor.color}}">
+  </div>
+
+  <div class="form-group">
+    <label><input type="checkbox" name="autoBubbleTextColor" {{#if autoTextColor}}checked{{/if}}> Text color: auto (exact inverse of the bubble color)</label>
+    <label>Custom text color <span class="ccp-always-yours">Uncheck "Auto" above to pick your own — handy since the auto-inverse can land on an odd or muddy color for some backgrounds.</span></label>
+    <input type="color" name="chatBubbleTextColor" value="{{chatBubbleColor.fg}}">
   </div>
 
   <div class="form-group">

@@ -4,15 +4,19 @@
 // is which image shows (portrait or token, a per-viewer preference) and
 // their own character's chat bubble color (a property of the CHARACTER,
 // stored as an Actor flag, so every viewer sees the same color for that
-// character — see appearance.js's actorBubbleColor). Text color is always
-// the bubble color's exact inverse, computed automatically. The portrait
-// preview is read-only: it shows the character's CURRENT effective look
-// (whatever the GM has set, via getEffectiveAppearance) so the player can
-// still see roughly how their popup will look, just not change it from
-// here. The bubble preview, unlike the portrait one, IS live — it updates
-// as the color picker below it changes. Both the color picker and its
-// preview only show up when the player has a character assigned, since
-// there's no actor to store the flag on otherwise.
+// character — see appearance.js's actorBubbleColor). Text color defaults
+// to the bubble color's exact inverse (great for black/white, occasionally
+// an odd/muddy choice for other backgrounds) but can be overridden with
+// its own color picker — "Auto" stays checked by default and keeps saving
+// the inverse; unchecking it reveals a picker for a custom text color,
+// saved as its own "bubbleTextColor" flag (see actorBubbleTextColor). The
+// portrait preview is read-only: it shows the character's CURRENT
+// effective look (whatever the GM has set, via getEffectiveAppearance) so
+// the player can still see roughly how their popup will look, just not
+// change it from here. The bubble preview, unlike the portrait one, IS
+// live — it updates as either color control below it changes. The color
+// controls and their preview only show up when the player has a character
+// assigned, since there's no actor to store either flag on otherwise.
 
 import {
   MODULE_ID,
@@ -22,7 +26,7 @@ import {
   hexToRgb
 } from "../constants.js";
 import { applyPositionStyle } from "../position.js";
-import { getEffectiveAppearance, actorBubbleColor } from "../appearance.js";
+import { getEffectiveAppearance, actorBubbleColor, actorBubbleTextColor } from "../appearance.js";
 
 /** A semi-transparent border shade derived from the bubble's foreground (text) color — matches popup.js's own. */
 function hexToBorderRgba(hex) {
@@ -74,11 +78,12 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
         } right now, so this choice won't take effect until they unpin it.`
       : "Always your own choice, even though the GM controls the size/position/flip.";
 
-    // Only meaningful with a character assigned — it's stored as a flag
-    // on that Actor document, not a setting, so there's nowhere to save
-    // it without one (see file header).
+    // Only meaningful with a character assigned — both are stored as
+    // flags on that Actor document, not settings, so there's nowhere to
+    // save either one without a character (see file header).
     const bubbleColor = actorBubbleColor(character);
-    const bubbleFg = invertHexColor(bubbleColor);
+    const customTextColor = character?.getFlag(MODULE_ID, "bubbleTextColor") || null;
+    const bubbleFg = actorBubbleTextColor(character);
 
     return {
       imageSources: buildImageSourceOptions(currentImageSource),
@@ -87,7 +92,12 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
       appearance,
       imageSourceNote,
       hasCharacter: !!character,
-      chatBubbleColor: { color: bubbleColor, fg: bubbleFg, border: hexToBorderRgba(bubbleFg) }
+      chatBubbleColor: { color: bubbleColor, fg: bubbleFg, border: hexToBorderRgba(bubbleFg) },
+      // Whether text color is currently following the auto-inverse (true)
+      // or a custom color the player picked (false) — decides the initial
+      // state of the "Auto" checkbox and whether the text-color picker
+      // starts out enabled.
+      autoTextColor: !customTextColor
     };
   }
 
@@ -112,16 +122,42 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     const bubbleColorInput = root.querySelector("input[name='chatBubbleColor']");
+    const autoTextCheckbox = root.querySelector("input[name='autoBubbleTextColor']");
+    const textColorInput = root.querySelector("input[name='chatBubbleTextColor']");
     const bubblePreview = root.querySelector("#ccp-player-bubble-preview");
+
+    const currentFg = () => (autoTextCheckbox?.checked ? invertHexColor(bubbleColorInput?.value) : textColorInput?.value);
+
     const syncBubbleColorPreview = () => {
       if (!bubblePreview || !bubbleColorInput) return;
       const bg = bubbleColorInput.value;
-      const fg = invertHexColor(bg);
+      const fg = currentFg();
       bubblePreview.style.setProperty("--ccp-bubble-bg", bg);
       bubblePreview.style.setProperty("--ccp-bubble-fg", fg);
       bubblePreview.style.setProperty("--ccp-bubble-border", hexToBorderRgba(fg));
     };
+
+    const setTextColorDisabled = () => {
+      if (!textColorInput || !autoTextCheckbox) return;
+      textColorInput.disabled = autoTextCheckbox.checked;
+    };
+
+    // Only reset the text-color picker's VALUE in response to the user
+    // actually toggling "Auto" — never on initial render, or a saved
+    // custom color would get clobbered by the auto-inverse the instant
+    // the form opens.
+    const onAutoToggle = () => {
+      setTextColorDisabled();
+      if (!autoTextCheckbox.checked && bubbleColorInput && textColorInput) {
+        textColorInput.value = invertHexColor(bubbleColorInput.value);
+      }
+      syncBubbleColorPreview();
+    };
+
     bubbleColorInput?.addEventListener("input", syncBubbleColorPreview);
+    autoTextCheckbox?.addEventListener("change", onAutoToggle);
+    textColorInput?.addEventListener("input", syncBubbleColorPreview);
+    setTextColorDisabled();
     syncBubbleColorPreview();
   }
 
@@ -129,13 +165,21 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
     const data = formData.object;
     await game.settings.set(MODULE_ID, "imageSource", data.imageSource);
 
-    // Bubble color is a flag on the player's own character (see file
-    // header) — only present in the submitted data at all when a
-    // character was assigned and the field was actually rendered.
+    // Bubble color (and, optionally, a custom text color) are flags on
+    // the player's own character (see file header) — only present in the
+    // submitted data at all when a character was assigned and the fields
+    // were actually rendered.
     const character = game.user.character;
     if (character && data.chatBubbleColor) {
       try {
         await character.setFlag(MODULE_ID, "bubbleColor", data.chatBubbleColor);
+        if (data.autoBubbleTextColor) {
+          // Back to auto-inverse — clear any previously-saved custom
+          // text color rather than leaving a stale override behind.
+          await character.unsetFlag(MODULE_ID, "bubbleTextColor");
+        } else if (data.chatBubbleTextColor) {
+          await character.setFlag(MODULE_ID, "bubbleTextColor", data.chatBubbleTextColor);
+        }
       } catch (err) {
         console.error("FGA Character Popup | couldn't save bubble color to your character", err);
         ui.notifications.warn(

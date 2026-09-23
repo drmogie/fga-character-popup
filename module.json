@@ -1,8 +1,8 @@
 {
   "id": "fga-character-popup",
   "title": "FGA Character Popup",
-  "description": "Shows a big floating character portrait on screen when that character speaks in chat, gets bloodied/healed/revived, or has a classified buff/debuff applied — with an optional chat bubble showing the message text (each character's own bubble color, visible the same way to everyone), GM-controlled size/position/flip/fade, and player-chosen portrait vs. token image.",
-  "version": "2026.09.23.5",
+  "description": "Shows a big floating character portrait on screen when that character speaks in chat, gets bloodied/healed/revived, or has a classified buff/debuff applied — with an optional chat bubble showing the message text (each character's own bubble color and, optionally, its own custom text color, visible the same way to everyone), GM-controlled size/position/flip/fade, and player-chosen portrait vs. token image.",
+  "version": "2026.09.23.6",
   "compatibility": {
     "minimum": "12",
     "verified": "13"

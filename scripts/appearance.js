@@ -32,8 +32,11 @@
 // same way, and — being on the actor itself — the player who owns that
 // character can set it themselves without needing GM/world-setting
 // permission (see actorBubbleColor below and player-settings-form.js).
+// Text color defaults to that background's RGB inverse (a second flag,
+// "bubbleTextColor", lets a player override it when the auto-inverse
+// looks off on their chosen background — see actorBubbleTextColor below).
 
-import { MODULE_ID, DEFAULT_CHAT_BUBBLE_COLOR } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_COLOR, invertHexColor } from "./constants.js";
 
 // Fallback look for an NPC with no matching disposition-bucket override —
 // the module's own built-in default, never GM-edited directly. Player
@@ -77,6 +80,20 @@ export function viewerImageSource() {
  */
 export function actorBubbleColor(actor) {
   return actor?.getFlag(MODULE_ID, "bubbleColor") || DEFAULT_CHAT_BUBBLE_COLOR;
+}
+
+/**
+ * This character's chat-bubble TEXT color. Defaults to the exact RGB
+ * inverse of their bubble background (the original behavior — great for
+ * black/white, occasionally an odd/muddy result for other backgrounds),
+ * but a player can override it with their own "bubbleTextColor" flag when
+ * the auto-inverse doesn't look right on their chosen background. Same
+ * value for every viewer, same reasoning as actorBubbleColor above.
+ * @param {Actor} actor
+ */
+export function actorBubbleTextColor(actor) {
+  const custom = actor?.getFlag(MODULE_ID, "bubbleTextColor");
+  return custom || invertHexColor(actorBubbleColor(actor));
 }
 
 /** An override's imageSource field is "" (inherit) unless the GM pinned one. */
