@@ -63,6 +63,9 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
       chatBubbleHeight:
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
+      // Bubble color is each player's own choice now (Configure Your
+      // Popup, client-scoped) — this is just a preview using the GM's OWN
+      // personal choice, not an editable field on this form.
       chatBubbleColor: (() => {
         const color = game.settings.get(MODULE_ID, "chatBubbleColor") ?? DEFAULT_CHAT_BUBBLE_COLOR;
         const fg = invertHexColor(color);
@@ -138,18 +141,6 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     bubbleWidthRange?.addEventListener("input", syncBubblePreview);
     bubbleHeightRange?.addEventListener("input", syncBubblePreview);
-
-    const bubbleColorInput = root.querySelector("input[name='chatBubbleColor']");
-    const syncBubbleColorPreview = () => {
-      if (!bubblePreview || !bubbleColorInput) return;
-      const bg = bubbleColorInput.value;
-      const fg = invertHexColor(bg);
-      bubblePreview.style.setProperty("--ccp-bubble-bg", bg);
-      bubblePreview.style.setProperty("--ccp-bubble-fg", fg);
-      bubblePreview.style.setProperty("--ccp-bubble-border", hexToBorderRgba(fg));
-    };
-    bubbleColorInput?.addEventListener("input", syncBubbleColorPreview);
-    syncBubbleColorPreview();
   }
 
   static async #onSubmit(_event, _form, formData) {
@@ -180,11 +171,8 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
       widthPx: data.chatBubbleWidth !== undefined ? Number(data.chatBubbleWidth) : current.widthPx,
       heightPx: data.chatBubbleHeight !== undefined ? Number(data.chatBubbleHeight) : current.heightPx
     });
-    await game.settings.set(
-      MODULE_ID,
-      "chatBubbleColor",
-      data.chatBubbleColor || DEFAULT_CHAT_BUBBLE_COLOR
-    );
+    // chatBubbleColor is NOT saved from this form — it's each player's own
+    // client-scoped choice now (Configure Your Popup).
 
     ui.notifications.info("FGA Character Popup: GM rules saved.");
   }

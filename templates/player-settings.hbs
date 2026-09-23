@@ -23,6 +23,24 @@
     </select>
   </div>
 
+  <hr>
+
+  <div class="form-group">
+    <label>Chat Bubble Color <span class="ccp-always-yours">Also always your own choice — text color is automatically the exact inverse, so it always stays readable.</span></label>
+    <input type="color" name="chatBubbleColor" value="{{chatBubbleColor.color}}">
+  </div>
+
+  <div class="form-group">
+    <label>Bubble preview (only visible to you)</label>
+    <div class="ccp-bubble-preview-box">
+      <div class="ccp-chat-bubble ccp-chat-bubble-static" id="ccp-player-bubble-preview" data-tail="center" style="--ccp-bubble-bg: {{chatBubbleColor.color}}; --ccp-bubble-fg: {{chatBubbleColor.fg}}; --ccp-bubble-border: {{chatBubbleColor.border}};">
+        <span class="ccp-bubble-name">{{previewName}}:</span>
+        <span class="ccp-bubble-text">This is what your chat bubble looks like.</span>
+      </div>
+    </div>
+    <p class="hint">Only shows at all if the GM has the chat bubble turned on in Configure Popup Rules.</p>
+  </div>
+
   <footer class="form-footer">
     <button type="submit"><i class="fa-solid fa-save"></i> Save</button>
   </footer>

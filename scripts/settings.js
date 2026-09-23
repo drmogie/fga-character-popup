@@ -18,8 +18,8 @@ export function registerSettings() {
 
 // Position, size, flip, and fade timing used to live here as per-player
 // (client-scoped) settings — they're all GM-only now (see "Configure
-// Character Appearance"), so the only thing left that's always the
-// viewer's own choice is which image shows.
+// Character Appearance"). What's left as always-the-viewer's-own-choice:
+// which image shows, and what color their own chat bubble uses.
 function registerPlayerSettings() {
   game.settings.register(MODULE_ID, "imageSource", {
     scope: "client",
@@ -28,10 +28,24 @@ function registerPlayerSettings() {
     default: "portrait"
   });
 
+  // Each viewer's own chat-bubble background color — client-scoped, same
+  // pattern as imageSource: it applies whenever THIS viewer sees ANY
+  // popup's bubble, regardless of who's speaking. Text color is never
+  // stored separately, it's always computed as this color's literal RGB
+  // inverse (see constants.js's invertHexColor and popup.js's
+  // buildChatBubble). Only actually shown at all if the GM has the chat
+  // bubble feature turned on (chatBubbleEnabled, GM-only).
+  game.settings.register(MODULE_ID, "chatBubbleColor", {
+    scope: "client",
+    config: false,
+    type: String,
+    default: DEFAULT_CHAT_BUBBLE_COLOR
+  });
+
   game.settings.registerMenu(MODULE_ID, "playerSettingsMenu", {
     name: "Popup Appearance",
     label: "Configure Your Popup",
-    hint: "Choose which image (portrait or token) shows on your own popup. Everything else — size, position, flip, and fade timing — is set by the GM.",
+    hint: "Choose which image (portrait or token) shows on your own popup, and your own chat bubble color (text color is always its exact inverse). Everything else — size, position, flip, and fade timing — is set by the GM.",
     icon: "fa-solid fa-image",
     type: PlayerSettingsForm,
     restricted: false
@@ -127,21 +141,15 @@ function registerGMSettings() {
     type: Object,
     default: DEFAULT_CHAT_BUBBLE_STYLE
   });
-  // Bubble background color, as a "#rrggbb" hex string — text color is
-  // never stored separately, it's always computed as this color's literal
-  // RGB inverse at render time (see constants.js's invertHexColor and
-  // popup.js's buildChatBubble).
-  game.settings.register(MODULE_ID, "chatBubbleColor", {
-    scope: "world",
-    config: false,
-    type: String,
-    default: DEFAULT_CHAT_BUBBLE_COLOR
-  });
+  // chatBubbleColor (the bubble's background color) moved to
+  // registerPlayerSettings() — it's each viewer's own choice now, not a
+  // GM-wide setting. This form only controls whether the bubble shows at
+  // all, and its width/height.
 
   game.settings.registerMenu(MODULE_ID, "gmSettingsMenu", {
     name: "Popup Rules (GM Only)",
     label: "Configure Popup Rules",
-    hint: "Set how long popups stay up, which chat messages trigger them, the bloodied/healed/revived aura rules, and the optional chat bubble.",
+    hint: "Set how long popups stay up, which chat messages trigger them, the bloodied/healed/revived aura rules, and whether the optional chat bubble is shown (each player picks their own bubble color in Configure Your Popup).",
     icon: "fa-solid fa-crown",
     type: GMSettingsForm,
     restricted: true

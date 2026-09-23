@@ -89,14 +89,10 @@
           <span class="ccp-bubble-text">This is what a chat bubble line looks like.</span>
         </div>
       </div>
-      <p class="hint">The bubble itself always stays fixed top-center — only its tail moves, pointing left/center/right toward whichever side of the screen that viewer's own popup is positioned on. This preview always shows it centered.</p>
+      <p class="hint">The bubble itself always stays fixed top-center — only its tail moves, pointing left/center/right toward whichever side of the screen that viewer's own popup is positioned on. This preview always shows it centered, using your own personal bubble color (see below).</p>
     </div>
 
-    <div class="form-group">
-      <label>Bubble color</label>
-      <input type="color" name="chatBubbleColor" value="{{chatBubbleColor.color}}">
-      <p class="hint">Text color is always the exact inverse of this color, computed automatically — pick a bubble color and the text always stays readable against it.</p>
-    </div>
+    <p class="hint">Bubble color is each player's own choice, set in their own <strong>Configure Your Popup</strong> — not something the GM sets for everyone. Text color there is always the exact inverse of whatever color a player picks, computed automatically.</p>
 
     <div class="form-group">
       <label>Bubble width: <span id="ccp-bubble-width-output">{{chatBubbleWidth}}</span>px</label>
