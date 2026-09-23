@@ -23,8 +23,17 @@
 // viewer's own choice (see player-settings-form.js). An override can
 // optionally pin one anyway, but leaving it blank always falls back to
 // whichever image source THIS VIEWER has personally chosen.
+//
+// Chat bubble color works differently again — it's tied to the SPEAKING
+// character, not the viewer, so everyone sees the same color for a given
+// character and can learn to recognize who's talking by color alone. It's
+// stored as a flag directly on that character's Actor document (not a
+// module Setting), because a flag is document data everyone reads the
+// same way, and — being on the actor itself — the player who owns that
+// character can set it themselves without needing GM/world-setting
+// permission (see actorBubbleColor below and player-settings-form.js).
 
-import { MODULE_ID } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_COLOR } from "./constants.js";
 
 // Fallback look for an NPC with no matching disposition-bucket override —
 // the module's own built-in default, never GM-edited directly. Player
@@ -57,6 +66,17 @@ export function getDispositionKey(actor) {
 /** The one appearance field still owned by the viewer, not the GM. */
 export function viewerImageSource() {
   return game.settings.get(MODULE_ID, "imageSource");
+}
+
+/**
+ * This character's own chat-bubble background color, as whoever owns the
+ * character set it (falls back to the module default if they never set
+ * one, or for an NPC with no owning player). Same value for every viewer,
+ * since it's actor data, not a per-client setting — see the file header.
+ * @param {Actor} actor
+ */
+export function actorBubbleColor(actor) {
+  return actor?.getFlag(MODULE_ID, "bubbleColor") || DEFAULT_CHAT_BUBBLE_COLOR;
 }
 
 /** An override's imageSource field is "" (inherit) unless the GM pinned one. */

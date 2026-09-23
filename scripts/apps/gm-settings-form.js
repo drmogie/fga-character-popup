@@ -4,14 +4,8 @@
 // NPC groups, or a specific character) live in their own separate window
 // now — see appearance-overrides-form.js / "Configure Character Appearance".
 
-import {
-  MODULE_ID,
-  FALLBACK_IMAGE,
-  DEFAULT_CHAT_BUBBLE_STYLE,
-  DEFAULT_CHAT_BUBBLE_COLOR,
-  invertHexColor,
-  hexToRgb
-} from "../constants.js";
+import { MODULE_ID, FALLBACK_IMAGE, DEFAULT_CHAT_BUBBLE_STYLE, invertHexColor, hexToRgb } from "../constants.js";
+import { actorBubbleColor } from "../appearance.js";
 
 /** A semi-transparent border shade derived from the bubble's foreground (text) color — matches popup.js's own. */
 function hexToBorderRgba(hex) {
@@ -63,11 +57,14 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
       chatBubbleHeight:
         (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
-      // Bubble color is each player's own choice now (Configure Your
-      // Popup, client-scoped) — this is just a preview using the GM's OWN
-      // personal choice, not an editable field on this form.
+      // Bubble color is tied to whichever character is speaking now (an
+      // Actor flag, not a Setting — see appearance.js) — not editable from
+      // this form. This preview just shows the GM's own assigned
+      // character's color (or the module default if they don't have one
+      // or haven't set it), purely so the width/height sliders have
+      // something to preview against.
       chatBubbleColor: (() => {
-        const color = game.settings.get(MODULE_ID, "chatBubbleColor") ?? DEFAULT_CHAT_BUBBLE_COLOR;
+        const color = actorBubbleColor(game.user.character);
         const fg = invertHexColor(color);
         return { color, fg, border: hexToBorderRgba(fg) };
       })(),
@@ -171,8 +168,9 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
       widthPx: data.chatBubbleWidth !== undefined ? Number(data.chatBubbleWidth) : current.widthPx,
       heightPx: data.chatBubbleHeight !== undefined ? Number(data.chatBubbleHeight) : current.heightPx
     });
-    // chatBubbleColor is NOT saved from this form — it's each player's own
-    // client-scoped choice now (Configure Your Popup).
+    // Bubble color is NOT saved from this form — it's a flag on each
+    // character's own Actor document now, set by that character's player
+    // in Configure Your Popup (see appearance.js's actorBubbleColor).
 
     ui.notifications.info("FGA Character Popup: GM rules saved.");
   }

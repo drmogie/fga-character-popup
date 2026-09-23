@@ -55,10 +55,12 @@ export const FALLBACK_IMAGE = "icons/svg/mystery-man.svg";
 // setting, popup.js's buildChatBubble, and the GM Rules form).
 export const DEFAULT_CHAT_BUBBLE_STYLE = { widthPx: 420, heightPx: 90 };
 
-// Default chat-bubble background color (see chatBubbleColor setting) —
-// text color is always computed as this color's RGB inverse, never set
-// separately. Shared by popup.js (the real bubble) and gm-settings-form.js
-// (the settings-form preview), so both compute the same inverse the same way.
+// Fallback chat-bubble background color for a character with no
+// "bubbleColor" flag set of their own (see appearance.js's
+// actorBubbleColor) — text color is always computed as this color's RGB
+// inverse, never set separately. Shared by popup.js (the real bubble),
+// player-settings-form.js, and gm-settings-form.js (their previews), so
+// they all compute the same inverse the same way.
 export const DEFAULT_CHAT_BUBBLE_COLOR = "#0a0a0e";
 
 /** "#rgb" or "#rrggbb" -> {r, g, b} (0-255 each). */

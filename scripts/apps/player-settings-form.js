@@ -1,24 +1,28 @@
 // The GUI form each player uses to set up their own popup. Placement,
 // size, flip, and fade timing all moved to GM-only control (see "Configure
-// Character Appearance") — what's left as always the viewer's own choice
-// is which image shows (portrait or token) and what color their own chat
-// bubble uses (text color is always its exact inverse, computed automatically).
-// The portrait preview is read-only: it shows the character's CURRENT
-// effective look (whatever the GM has set, via getEffectiveAppearance) so
-// the player can still see roughly how their popup will look, just not
-// change it from here. The bubble preview, unlike the portrait one, IS live —
-// it updates as the color picker below it changes.
+// Character Appearance") — what's left as always the player's own choice
+// is which image shows (portrait or token, a per-viewer preference) and
+// their own character's chat bubble color (a property of the CHARACTER,
+// stored as an Actor flag, so every viewer sees the same color for that
+// character — see appearance.js's actorBubbleColor). Text color is always
+// the bubble color's exact inverse, computed automatically. The portrait
+// preview is read-only: it shows the character's CURRENT effective look
+// (whatever the GM has set, via getEffectiveAppearance) so the player can
+// still see roughly how their popup will look, just not change it from
+// here. The bubble preview, unlike the portrait one, IS live — it updates
+// as the color picker below it changes. Both the color picker and its
+// preview only show up when the player has a character assigned, since
+// there's no actor to store the flag on otherwise.
 
 import {
   MODULE_ID,
   buildImageSourceOptions,
   FALLBACK_IMAGE,
-  DEFAULT_CHAT_BUBBLE_COLOR,
   invertHexColor,
   hexToRgb
 } from "../constants.js";
 import { applyPositionStyle } from "../position.js";
-import { getEffectiveAppearance } from "../appearance.js";
+import { getEffectiveAppearance, actorBubbleColor } from "../appearance.js";
 
 /** A semi-transparent border shade derived from the bubble's foreground (text) color — matches popup.js's own. */
 function hexToBorderRgba(hex) {
@@ -70,7 +74,10 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
         } right now, so this choice won't take effect until they unpin it.`
       : "Always your own choice, even though the GM controls the size/position/flip.";
 
-    const bubbleColor = game.settings.get(MODULE_ID, "chatBubbleColor") ?? DEFAULT_CHAT_BUBBLE_COLOR;
+    // Only meaningful with a character assigned — it's stored as a flag
+    // on that Actor document, not a setting, so there's nowhere to save
+    // it without one (see file header).
+    const bubbleColor = actorBubbleColor(character);
     const bubbleFg = invertHexColor(bubbleColor);
 
     return {
@@ -121,7 +128,24 @@ export class PlayerSettingsForm extends HandlebarsApplicationMixin(ApplicationV2
   static async #onSubmit(_event, _form, formData) {
     const data = formData.object;
     await game.settings.set(MODULE_ID, "imageSource", data.imageSource);
-    await game.settings.set(MODULE_ID, "chatBubbleColor", data.chatBubbleColor || DEFAULT_CHAT_BUBBLE_COLOR);
+
+    // Bubble color is a flag on the player's own character (see file
+    // header) — only present in the submitted data at all when a
+    // character was assigned and the field was actually rendered.
+    const character = game.user.character;
+    if (character && data.chatBubbleColor) {
+      try {
+        await character.setFlag(MODULE_ID, "bubbleColor", data.chatBubbleColor);
+      } catch (err) {
+        console.error("FGA Character Popup | couldn't save bubble color to your character", err);
+        ui.notifications.warn(
+          "FGA Character Popup: your image choice saved, but your bubble color didn't — you may not have permission to edit your character. Ask your GM."
+        );
+        ui.notifications.info("FGA Character Popup: your settings were saved.");
+        return;
+      }
+    }
+
     ui.notifications.info("FGA Character Popup: your settings were saved.");
   }
 }

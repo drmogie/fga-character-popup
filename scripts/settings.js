@@ -2,7 +2,7 @@
 // buttons (one for players, two GM-only) that open the nice GUI forms
 // instead of Foundry's plain default settings list.
 
-import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE, DEFAULT_CHAT_BUBBLE_COLOR } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE } from "./constants.js";
 import { PlayerSettingsForm } from "./apps/player-settings-form.js";
 import { GMSettingsForm } from "./apps/gm-settings-form.js";
 import { AppearanceOverridesForm } from "./apps/appearance-overrides-form.js";
@@ -18,8 +18,14 @@ export function registerSettings() {
 
 // Position, size, flip, and fade timing used to live here as per-player
 // (client-scoped) settings — they're all GM-only now (see "Configure
-// Character Appearance"). What's left as always-the-viewer's-own-choice:
-// which image shows, and what color their own chat bubble uses.
+// Character Appearance"). Image source is still a module Setting
+// (client-scoped — it's about what THIS viewer prefers to see). Chat
+// bubble color is NOT a Setting at all anymore — it's a flag on the
+// player's own character (Actor document), set from the player form but
+// stored/read via appearance.js's actorBubbleColor(), so every viewer
+// sees the same color for a given character rather than their own
+// personal color for every character (see appearance.js's file header
+// for why).
 function registerPlayerSettings() {
   game.settings.register(MODULE_ID, "imageSource", {
     scope: "client",
@@ -28,24 +34,10 @@ function registerPlayerSettings() {
     default: "portrait"
   });
 
-  // Each viewer's own chat-bubble background color — client-scoped, same
-  // pattern as imageSource: it applies whenever THIS viewer sees ANY
-  // popup's bubble, regardless of who's speaking. Text color is never
-  // stored separately, it's always computed as this color's literal RGB
-  // inverse (see constants.js's invertHexColor and popup.js's
-  // buildChatBubble). Only actually shown at all if the GM has the chat
-  // bubble feature turned on (chatBubbleEnabled, GM-only).
-  game.settings.register(MODULE_ID, "chatBubbleColor", {
-    scope: "client",
-    config: false,
-    type: String,
-    default: DEFAULT_CHAT_BUBBLE_COLOR
-  });
-
   game.settings.registerMenu(MODULE_ID, "playerSettingsMenu", {
     name: "Popup Appearance",
     label: "Configure Your Popup",
-    hint: "Choose which image (portrait or token) shows on your own popup, and your own chat bubble color (text color is always its exact inverse). Everything else — size, position, flip, and fade timing — is set by the GM.",
+    hint: "Choose which image (portrait or token) shows on your own popup, and your character's own chat bubble color (visible the same way to every viewer, so people can recognize who's talking by color). Everything else — size, position, flip, and fade timing — is set by the GM.",
     icon: "fa-solid fa-image",
     type: PlayerSettingsForm,
     restricted: false
@@ -141,15 +133,15 @@ function registerGMSettings() {
     type: Object,
     default: DEFAULT_CHAT_BUBBLE_STYLE
   });
-  // chatBubbleColor (the bubble's background color) moved to
-  // registerPlayerSettings() — it's each viewer's own choice now, not a
-  // GM-wide setting. This form only controls whether the bubble shows at
-  // all, and its width/height.
+  // Bubble color isn't a Setting at all anymore — it's a flag on each
+  // character's own Actor document (see appearance.js's actorBubbleColor
+  // and player-settings-form.js). This form only controls whether the
+  // bubble shows at all, and its width/height.
 
   game.settings.registerMenu(MODULE_ID, "gmSettingsMenu", {
     name: "Popup Rules (GM Only)",
     label: "Configure Popup Rules",
-    hint: "Set how long popups stay up, which chat messages trigger them, the bloodied/healed/revived aura rules, and whether the optional chat bubble is shown (each player picks their own bubble color in Configure Your Popup).",
+    hint: "Set how long popups stay up, which chat messages trigger them, the bloodied/healed/revived aura rules, and whether the optional chat bubble is shown (each character's own bubble color is set on that character in Configure Your Popup, visible the same to everyone).",
     icon: "fa-solid fa-crown",
     type: GMSettingsForm,
     restricted: true
