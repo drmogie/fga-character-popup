@@ -47,7 +47,8 @@
 }
 
 .ccp-settings-form .ccp-bloodied-section,
-.ccp-settings-form .ccp-heal-section {
+.ccp-settings-form .ccp-heal-section,
+.ccp-settings-form .ccp-bubble-section {
   padding-left: 0.5rem;
   border-left: 2px solid rgba(255, 255, 255, 0.15);
 }

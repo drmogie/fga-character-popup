@@ -164,7 +164,28 @@ function handleChatMessage(message) {
   const actor = getSpeakingActor(message);
   if (!actor) return;
   if (!shouldTrigger(message, actor)) return;
-  showCharacterPopup(actor);
+  showCharacterPopup(actor, { chatText: extractChatText(message) });
+}
+
+/**
+ * Pull the actual spoken line out of a chat message, for the optional chat
+ * bubble (see popup.js). Returns undefined — no bubble — for a pure dice
+ * roll (its "content" is roll markup, not a line of dialogue) or for a
+ * message whose text is empty once HTML is stripped out.
+ * @param {ChatMessage} message
+ */
+function extractChatText(message) {
+  if (message.rolls?.length) return undefined;
+
+  const raw = message.content ?? "";
+  if (!raw) return undefined;
+
+  // Message content is HTML (even a plain typed line gets wrapped by
+  // Foundry), so strip tags down to the actual text the player typed.
+  const scratch = document.createElement("div");
+  scratch.innerHTML = raw;
+  const text = (scratch.textContent ?? "").trim();
+  return text || undefined;
 }
 
 /**

@@ -76,6 +76,37 @@
 
   <hr>
 
+  <div class="form-group">
+    <label><input type="checkbox" name="chatBubbleEnabled" {{#if chatBubbleEnabled}}checked{{/if}}> Also show a chat bubble with the message text when a popup is triggered by someone speaking in chat</label>
+  </div>
+
+  <div class="ccp-bubble-section">
+    <div class="form-group">
+      <label>Preview (only visible to you)</label>
+      <div class="ccp-bubble-preview-box">
+        <div class="ccp-chat-bubble ccp-chat-bubble-static" id="ccp-bubble-preview" data-tail="center" style="--ccp-bubble-height: {{chatBubbleHeight}}px;">
+          <span class="ccp-bubble-name">{{previewName}}:</span>
+          <span class="ccp-bubble-text">This is what a chat bubble line looks like.</span>
+        </div>
+      </div>
+      <p class="hint">The bubble itself always stays fixed top-center — only its tail moves, pointing left/center/right toward whichever side of the screen that viewer's own popup is positioned on. This preview always shows it centered.</p>
+    </div>
+
+    <div class="form-group">
+      <label>Bubble width: <span id="ccp-bubble-width-output">{{chatBubbleWidth}}</span>px</label>
+      <input type="range" id="ccp-bubble-width-range" name="chatBubbleWidth" min="200" max="800" step="10" value="{{chatBubbleWidth}}">
+    </div>
+
+    <div class="form-group">
+      <label>Bubble min height: <span id="ccp-bubble-height-output">{{chatBubbleHeight}}</span>px</label>
+      <input type="range" id="ccp-bubble-height-range" name="chatBubbleHeight" min="50" max="300" step="10" value="{{chatBubbleHeight}}">
+    </div>
+
+    <p class="hint">Only shows for popups triggered by an actual chat message — bloodied/healed/revived and status-icon popups have no line to display, so they never get a bubble. Dice-roll-only messages are skipped too (nothing to show).</p>
+  </div>
+
+  <hr>
+
   <p class="hint">Want to force a specific look for players, NPCs, or one particular character? That's its own window now — look for <strong>"Configure Character Appearance"</strong> in Game Settings.</p>
 
   <footer class="form-footer">

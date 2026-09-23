@@ -172,3 +172,123 @@
   height: 100px;
   margin: 0.25rem 0 0.5rem;
 }
+
+/* Chat bubble — a fixed top-center box showing the message text from chat,
+   same idea as FGA Scene Director's own speech bubble. Only the tail moves
+   (left/center/right, via [data-tail]) to loosely point toward whichever
+   side of the screen this viewer's own popup happens to be positioned on;
+   see popup.js's getTailBucket(). */
+.ccp-chat-bubble {
+  position: fixed;
+  top: 3%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 101; /* above the portrait (#ccp-popup is z-index 100) */
+  box-sizing: border-box;
+  width: var(--ccp-bubble-width, 420px);
+  min-height: var(--ccp-bubble-height, 90px);
+  max-width: 90vw;
+  padding: 0.65rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  text-align: center;
+  background: rgba(10, 10, 14, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color: #f2f2f2;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.ccp-chat-bubble.ccp-fade-out {
+  transition: opacity 0.6s ease;
+  opacity: 0;
+}
+
+.ccp-bubble-name {
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.ccp-bubble-text {
+  flex: 1 1 auto;
+}
+
+/* The tail — two stacked CSS-triangle pseudo-elements (outer border color,
+   inner fill color, slightly inset) so it reads as a thin outline around a
+   solid fill, matching the bubble's own border/background. Left and right
+   use unequal side-widths so the tail visibly leans toward that side
+   instead of just sliding sideways while still pointing straight down. */
+.ccp-chat-bubble::before,
+.ccp-chat-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  border-style: solid;
+}
+
+.ccp-chat-bubble::before {
+  border-color: rgba(255, 255, 255, 0.18) transparent transparent transparent;
+}
+
+.ccp-chat-bubble::after {
+  margin-top: -1px;
+  border-color: rgba(10, 10, 14, 0.92) transparent transparent transparent;
+}
+
+.ccp-chat-bubble[data-tail="center"]::before {
+  left: 50%;
+  margin-left: -14px;
+  border-width: 14px 14px 0 14px;
+}
+.ccp-chat-bubble[data-tail="center"]::after {
+  left: 50%;
+  margin-left: -11px;
+  border-width: 11px 11px 0 11px;
+}
+
+.ccp-chat-bubble[data-tail="left"]::before {
+  left: 18%;
+  margin-left: -6px;
+  border-width: 16px 26px 0 6px;
+}
+.ccp-chat-bubble[data-tail="left"]::after {
+  left: 18%;
+  margin-left: -5px;
+  border-width: 13px 21px 0 5px;
+}
+
+.ccp-chat-bubble[data-tail="right"]::before {
+  left: 82%;
+  margin-left: -20px;
+  border-width: 16px 6px 0 26px;
+}
+.ccp-chat-bubble[data-tail="right"]::after {
+  left: 82%;
+  margin-left: -16px;
+  border-width: 13px 5px 0 21px;
+}
+
+/* Static in-dialog variant used by the GM Rules form's own preview — same
+   look, but positioned inline inside its preview box instead of fixed to
+   the viewport, and always shown with a centered tail (see the hint text
+   next to it in gm-settings.hbs). */
+.ccp-bubble-preview-box {
+  position: relative;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.ccp-chat-bubble.ccp-chat-bubble-static {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  margin: 0 auto;
+}

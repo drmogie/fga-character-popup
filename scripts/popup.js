@@ -3,18 +3,19 @@
 // window) since we don't want title bars or resize handles — just an image
 // that appears, sits where it's configured to, and goes away again.
 
-import { MODULE_ID } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE } from "./constants.js";
 import { applyPositionStyle } from "./position.js";
 import { getEffectiveAppearance } from "./appearance.js";
 
 const POPUP_ID = "ccp-popup";
+const BUBBLE_ID = "ccp-chat-bubble";
 
 /**
  * Show the popup for a given actor. Which appearance settings apply —
  * this viewer's own, a GM appearance override, or a per-character
  * override just for this actor — is decided in appearance.js.
  * @param {Actor} actor
- * @param {{statusIcons?: {id: string, name: string, img: string}[], forceAura?: "healed"|"revived"}} [options]
+ * @param {{statusIcons?: {id: string, name: string, img: string}[], forceAura?: "healed"|"revived", chatText?: string}} [options]
  *   `statusIcons` — condition icons to overlay centered on the popup, only
  *   ever passed by the status-icon auto-popup trigger in main.js.
  *   `forceAura` — passed by main.js's heal/revive detection when HP just
@@ -23,6 +24,11 @@ const POPUP_ID = "ccp-popup";
  *   way the bloodied check below does. Healed/revived are one-time
  *   events, not something recomputable from current data alone, so they
  *   have to be told explicitly rather than detected here.
+ *   `chatText` — the actual message text, only ever passed by the
+ *   chat-message trigger in main.js. When the GM has the chat bubble
+ *   enabled, this is what shows in it; every other trigger (bloodied,
+ *   healed/revived, status icons) has no line of dialogue, so it's simply
+ *   never provided for those and no bubble appears.
  */
 export function showCharacterPopup(actor, options = {}) {
   if (!actor) return;
@@ -38,8 +44,10 @@ export function showCharacterPopup(actor, options = {}) {
   const duration = game.settings.get(MODULE_ID, "duration"); // always GM-controlled
 
   // If a popup is already showing (e.g. someone typing fast), replace it
-  // rather than stacking multiple copies on screen.
+  // rather than stacking multiple copies on screen. The chat bubble, if any
+  // was showing, always rides along with the popup it belongs to.
   document.getElementById(POPUP_ID)?.remove();
+  document.getElementById(BUBBLE_ID)?.remove();
 
   const wrapper = document.createElement("div");
   wrapper.id = POPUP_ID;
@@ -88,22 +96,89 @@ export function showCharacterPopup(actor, options = {}) {
 
   document.body.appendChild(wrapper);
 
+  // Chat bubble — the actual message text from chat, shown in a fixed
+  // top-center box whose tail points toward whichever third of the screen
+  // THIS VIEWER's own popup is positioned in (appearance is per-player, so
+  // the tail direction is computed from this viewer's own settings, not a
+  // shared GM-staged position the way FGA Scene Director's bubble works).
+  let bubble = null;
+  if (options.chatText && game.settings.get(MODULE_ID, "chatBubbleEnabled")) {
+    bubble = buildChatBubble(actor, options.chatText, getTailBucket(appearance));
+    document.body.appendChild(bubble);
+  }
+
   // "Keep on screen" — skip the auto-hide timer entirely. The popup still
   // gets replaced the next time showCharacterPopup runs (see the
   // document.getElementById(POPUP_ID)?.remove() above), it just never
   // times out on its own.
   if (game.settings.get(MODULE_ID, "noTimeout")) return;
 
-  const removePopup = () => wrapper.remove();
+  const removeAll = () => {
+    wrapper.remove();
+    bubble?.remove();
+  };
 
   if (appearance.fadeOut) {
     setTimeout(() => {
       wrapper.classList.add("ccp-fade-out");
-      wrapper.addEventListener("transitionend", removePopup, { once: true });
+      bubble?.classList.add("ccp-fade-out");
+      wrapper.addEventListener("transitionend", removeAll, { once: true });
     }, duration * 1000);
   } else {
-    setTimeout(removePopup, duration * 1000);
+    setTimeout(removeAll, duration * 1000);
   }
+}
+
+/**
+ * Which third of the screen this viewer's own popup is positioned in —
+ * "left" | "center" | "right" — used to aim the chat bubble's tail. Mirrors
+ * the same left/center/right bucketing FGA Scene Director uses for its own
+ * speech bubble, just derived from this module's position settings
+ * (a 3x3 preset grid, or custom x/y sliders) instead of a staged token's
+ * on-canvas x.
+ * @param {{positionPreset: string, positionX: number}} appearance
+ */
+function getTailBucket(appearance) {
+  const preset = appearance.positionPreset;
+  if (preset === "custom") {
+    const x = appearance.positionX;
+    if (typeof x !== "number") return "center";
+    if (x < 33) return "left";
+    if (x > 67) return "right";
+    return "center";
+  }
+  if (preset?.endsWith("-left")) return "left";
+  if (preset?.endsWith("-right")) return "right";
+  return "center"; // top-center, center, bottom-center
+}
+
+/**
+ * Build the chat-bubble element (not yet attached to the page).
+ * @param {Actor} actor
+ * @param {string} text
+ * @param {"left"|"center"|"right"} tailBucket
+ */
+function buildChatBubble(actor, text, tailBucket) {
+  const style = game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE;
+
+  const bubble = document.createElement("div");
+  bubble.id = BUBBLE_ID;
+  bubble.classList.add("ccp-chat-bubble");
+  bubble.dataset.tail = tailBucket;
+  bubble.style.setProperty("--ccp-bubble-width", `${style.widthPx}px`);
+  bubble.style.setProperty("--ccp-bubble-height", `${style.heightPx}px`);
+
+  const nameSpan = document.createElement("span");
+  nameSpan.classList.add("ccp-bubble-name");
+  nameSpan.textContent = `${actor.name ?? ""}:`;
+
+  const textSpan = document.createElement("span");
+  textSpan.classList.add("ccp-bubble-text");
+  textSpan.textContent = text;
+
+  bubble.appendChild(nameSpan);
+  bubble.appendChild(textSpan);
+  return bubble;
 }
 
 /**

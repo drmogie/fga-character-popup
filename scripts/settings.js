@@ -2,7 +2,7 @@
 // buttons (one for players, two GM-only) that open the nice GUI forms
 // instead of Foundry's plain default settings list.
 
-import { MODULE_ID } from "./constants.js";
+import { MODULE_ID, DEFAULT_CHAT_BUBBLE_STYLE } from "./constants.js";
 import { PlayerSettingsForm } from "./apps/player-settings-form.js";
 import { GMSettingsForm } from "./apps/gm-settings-form.js";
 import { AppearanceOverridesForm } from "./apps/appearance-overrides-form.js";
@@ -151,10 +151,27 @@ function registerGMSettings() {
     default: false
   });
 
+  // Chat bubble — a fixed top-center box showing the actual message text,
+  // same idea as FGA Scene Director's speech bubble. Only ever shown for a
+  // popup triggered by a real chat message (see main.js's extractChatText);
+  // the bloodied/healed/revived/status-icon triggers have no line to show.
+  game.settings.register(MODULE_ID, "chatBubbleEnabled", {
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
+  game.settings.register(MODULE_ID, "chatBubbleStyle", {
+    scope: "world",
+    config: false,
+    type: Object,
+    default: DEFAULT_CHAT_BUBBLE_STYLE
+  });
+
   game.settings.registerMenu(MODULE_ID, "gmSettingsMenu", {
     name: "Popup Rules (GM Only)",
     label: "Configure Popup Rules",
-    hint: "Set how long popups stay up, which chat messages trigger them, and the bloodied/healed/revived aura rules.",
+    hint: "Set how long popups stay up, which chat messages trigger them, the bloodied/healed/revived aura rules, and the optional chat bubble.",
     icon: "fa-solid fa-crown",
     type: GMSettingsForm,
     restricted: true

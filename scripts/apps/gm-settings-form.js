@@ -4,7 +4,7 @@
 // NPC groups, or a specific character) live in their own separate window
 // now — see appearance-overrides-form.js / "Configure Character Appearance".
 
-import { MODULE_ID, FALLBACK_IMAGE } from "../constants.js";
+import { MODULE_ID, FALLBACK_IMAGE, DEFAULT_CHAT_BUBBLE_STYLE } from "../constants.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -44,7 +44,15 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
       bloodiedAutoPopup: game.settings.get(MODULE_ID, "bloodiedAutoPopup"),
 
       healAuraEnabled: game.settings.get(MODULE_ID, "healAuraEnabled"),
-      previewImg: game.user.character?.img || FALLBACK_IMAGE
+
+      chatBubbleEnabled: game.settings.get(MODULE_ID, "chatBubbleEnabled"),
+      chatBubbleWidth:
+        (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).widthPx,
+      chatBubbleHeight:
+        (game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE).heightPx,
+
+      previewImg: game.user.character?.img || FALLBACK_IMAGE,
+      previewName: game.user.character?.name || "Character"
     };
   }
 
@@ -88,6 +96,30 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     healCheckbox?.addEventListener("change", toggleHealSection);
     toggleHealSection();
+
+    const bubbleCheckbox = root.querySelector("input[name='chatBubbleEnabled']");
+    const bubbleSection = root.querySelector(".ccp-bubble-section");
+    const toggleBubbleSection = () => {
+      if (!bubbleSection || !bubbleCheckbox) return;
+      bubbleSection.style.display = bubbleCheckbox.checked ? "" : "none";
+    };
+    bubbleCheckbox?.addEventListener("change", toggleBubbleSection);
+    toggleBubbleSection();
+
+    const bubbleWidthRange = root.querySelector("#ccp-bubble-width-range");
+    const bubbleWidthOutput = root.querySelector("#ccp-bubble-width-output");
+    const bubbleHeightRange = root.querySelector("#ccp-bubble-height-range");
+    const bubbleHeightOutput = root.querySelector("#ccp-bubble-height-output");
+    const bubblePreview = root.querySelector("#ccp-bubble-preview");
+    const syncBubblePreview = () => {
+      if (bubbleWidthOutput && bubbleWidthRange) bubbleWidthOutput.textContent = bubbleWidthRange.value;
+      if (bubbleHeightOutput && bubbleHeightRange) bubbleHeightOutput.textContent = bubbleHeightRange.value;
+      if (bubblePreview && bubbleHeightRange) {
+        bubblePreview.style.setProperty("--ccp-bubble-height", `${bubbleHeightRange.value}px`);
+      }
+    };
+    bubbleWidthRange?.addEventListener("input", syncBubblePreview);
+    bubbleHeightRange?.addEventListener("input", syncBubblePreview);
   }
 
   static async #onSubmit(_event, _form, formData) {
@@ -111,6 +143,13 @@ export class GMSettingsForm extends HandlebarsApplicationMixin(ApplicationV2) {
     await game.settings.set(MODULE_ID, "bloodiedAutoPopup", !!data.bloodiedAutoPopup);
 
     await game.settings.set(MODULE_ID, "healAuraEnabled", !!data.healAuraEnabled);
+
+    await game.settings.set(MODULE_ID, "chatBubbleEnabled", !!data.chatBubbleEnabled);
+    const current = game.settings.get(MODULE_ID, "chatBubbleStyle") ?? DEFAULT_CHAT_BUBBLE_STYLE;
+    await game.settings.set(MODULE_ID, "chatBubbleStyle", {
+      widthPx: data.chatBubbleWidth !== undefined ? Number(data.chatBubbleWidth) : current.widthPx,
+      heightPx: data.chatBubbleHeight !== undefined ? Number(data.chatBubbleHeight) : current.heightPx
+    });
 
     ui.notifications.info("FGA Character Popup: GM rules saved.");
   }

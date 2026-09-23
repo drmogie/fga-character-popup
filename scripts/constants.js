@@ -50,3 +50,7 @@ export function buildImageSourceOverrideOptions(currentKey) {
 
 // Used as a preview image / popup fallback if an actor somehow has no image set.
 export const FALLBACK_IMAGE = "icons/svg/mystery-man.svg";
+
+// Default size for the optional chat-bubble overlay (see chatBubbleStyle
+// setting, popup.js's buildChatBubble, and the GM Rules form).
+export const DEFAULT_CHAT_BUBBLE_STYLE = { widthPx: 420, heightPx: 90 };
