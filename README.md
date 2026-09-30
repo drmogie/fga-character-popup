@@ -2,7 +2,7 @@
 
 Shows a big floating character portrait on screen when that character speaks in chat, gets bloodied/healed/revived, or has a classified buff/debuff applied — visual-novel style, separate from the chat log itself.
 
-Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (Fake Gaming Army) table — version `2026.09.23.6`.
+Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (Fake Gaming Army) table — version `2026.09.29.01`.
 
 ## What it does
 
@@ -125,3 +125,9 @@ Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (
 
 Version format is `YYYY.MM.DD.#` — so `2026.09.23.6` means the sixth build made on September 23, 2026.
 
+## Install from GitHub
+
+In Foundry, open Add-on Modules, then Install Module.
+Paste this Manifest URL and click Install:
+
+`https://github.com/drmogie/fga-character-popup/releases/latest/download/module.json`
