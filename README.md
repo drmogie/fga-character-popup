@@ -2,7 +2,7 @@
 
 Shows a big floating character portrait on screen when that character speaks in chat, gets bloodied/healed/revived, or has a classified buff/debuff applied — visual-novel style, separate from the chat log itself.
 
-Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (Fake Gaming Army) table — version `2026.09.29.01`.
+Built for **Gadrielian Realm** (Foundry VTT V13/V14, dnd5e system) and the **FGA** (Fake Gaming Army) table — version `2026.09.29.02`.
 
 ## What it does
 
@@ -110,12 +110,16 @@ Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (
   - The GM-side hint text was updated to mention that text color can be customized too, not just always the auto-inverse.
   - Validated: `node --check` on every changed `.js` file, `module.json` parsed with `json.load`, repo-wide grep confirmed the new `bubbleTextColor`/`autoBubbleTextColor`/`actorBubbleTextColor` identifiers are wired everywhere they need to be and nowhere they shouldn't be.
   - **Not yet live-tested** — needs the standard file-replace-and-restart, then a live check: confirm the Auto checkbox's default state matches whether a character already has a custom text color, confirm unchecking it seeds a sensible starting color, confirm the custom color actually shows in a real chat-triggered bubble on every viewer's screen, and confirm re-checking Auto and saving actually clears the override (test by picking an odd custom color, saving, re-checking Auto, saving again, and confirming the bubble goes back to the plain auto-inverse).
-
-## Things worth double-checking once you can test this live
-
-- **Message "style" detection** (`main.js`, `shouldTrigger`) — the in-character / emote checks assume `CONST.CHAT_MESSAGE_STYLES` has `OTHER`, `IC`, and `EMOTE` keys, the current Foundry/dnd5e convention. The "hello" test message did trigger the popup, which is a good sign.
-- **NPC/GM detection** (`actor.hasPlayerOwner`) — should be right, but worth a sanity check.
-- A message needs a **speaker with an assigned actor** to show a popup at all (`message.speaker.actor`) — if the GM sends a message while no token/character is selected as their active speaker, there's nothing to show a portrait for, regardless of the trigger settings. Worth keeping in mind while testing GM-sent messages specifically.
+- **`2026.09.24.1`** — compatibility check after Mogie updated the Dev server to Foundry VTT **V14** and the module stopped working. Went through Foundry's official V13→V14 breaking-changes list (ApplicationV2/HandlebarsApplicationMixin two-pass rendering changes, the Active Effects v2 restructuring of `ActiveEffect#changes`/`EffectChangeData#mode`, `MeasuredTemplate` removal, TinyMCE removal, `CONST.CHAT_MESSAGE_TYPES` → `CONST.CHAT_MESSAGE_STYLES`, manifest schema requirements) against every file in this module.
+  - **Nothing in this module's actual code touches anything V14 removed or restructured.** `main.js` already used `CONST.CHAT_MESSAGE_STYLES` (never the deprecated `TYPES`), the `createActiveEffect` hook only reads `effect.statuses` (never `.changes`/`.mode`, so the Active Effects v2 field move doesn't affect it), none of the four settings-form classes override the ApplicationV2 internals V14 changed (`_insertElement`/`_renderFrame`/`_configureRenderOptions`), no template uses a native `<details>` element, and nothing here touches `MeasuredTemplate` or TinyMCE at all.
+  - **The one real find:** `module.json`'s `compatibility.verified` was still `"13"` — on a fresh V14 install, Foundry shows this module as not verified for the running core version, which in recent Foundry releases can keep a module from being enabled at all until the GM explicitly overrides it, not just a passive warning. Bumped to `"verified": "14"` (`minimum` stays `"12"`, unchanged — nothing here needs a V14-only API, so there's no reason to raise the floor).
+  - Validated: `node --check` on every `.js` file (no code changes needed, but re-verified anyway), `module.json` parsed with `json.load`.
+  - **Not yet live-tested against the actual V14 server** — this session couldn't reach Mogie's Dev server directly this pass. If the module still doesn't work after installing this build, the next step is pulling the actual browser console error (F12 → Console tab) from the V14 install, since nothing in the code itself matched a known V14 breaking change.
+- **`2026.09.24.2`** — live-tested `2026.09.24.1` directly against Mogie's V14 Dev server via a connected browser session. Module Management showed it active with no compatibility warning, `Initialized` logged cleanly, and its settings windows all rendered fine — but bloodied/healed/revived/status-icon popups worked while **speaking in chat showed no popup at all, for every character, with no console error either.**
+  - **Root cause, confirmed live** by inspecting real chat messages in the browser console: Foundry **V14 added an explicit "speaking as" selector to the chat box**, and its default mode ("Public") sends the message with `speaker: {scene: null, actor: null, token: null}` — completely empty. Every earlier Foundry version auto-attached the sender's assigned character to `speaker` automatically; V14 no longer does unless the player explicitly switches that selector to "Public as Character." `getSpeakingActor()` had nothing to resolve, so `handleChatMessage` correctly (silently) declined to show a popup — no bug, just nothing to key off of.
+  - **Fix:** `getSpeakingActor()` (`main.js`) now falls back to the message sender's own assigned character (`message.author.character`, or `message.user.character` on V12/V13 where the property is still named `user`) whenever `speaker.token`/`speaker.actor` are both empty — restoring the old auto-attach behavior without requiring anyone to touch the new V14 selector. A deliberately chosen speaker (a token, or "Public as Character") is still always used first.
+  - Validated: `node --check` on `main.js`, confirmed via the live browser session that `message.author.character` correctly resolved to the sending player's actual character (Po Tato, for the message that prompted this investigation).
+  - Mogie already confirmed live on the V14 Dev server, independent of this fix: bloodied, healed/revived, and status-effect popups all still work correctly. **This build's chat-trigger fix itself still needs the standard file-replace-and-restart, then a live re-test:** speak in chat as a normal player, as the GM with a token selected, and (if it comes up) with the new "speaking as" selector deliberately set to something other than the default, to confirm the fallback doesn't override an intentional choice.
 
 ## Not needed yet, but available if we want to expand later
 
@@ -123,7 +127,9 @@ Built for **Gadrielian Realm** (Foundry VTT V13, dnd5e system) and the **FGA** (
 
 ## Version numbering
 
-Version format is `YYYY.MM.DD.#` — so `2026.09.23.6` means the sixth build made on September 23, 2026.
+- **`2026.09.29.02`** — GitHub release of the latest build. Contains the Foundry V14 chat fix from `2026.09.24.2` (it had been on the Foundry server only) and `verified` set to 14. The first GitHub release (`2026.09.29.01`) shipped the older code by mistake; use this one.
+
+Version format is `YYYY.MM.DD.#` — so `2026.09.29.02` means the second build made on September 29, 2026.
 
 ## Install from GitHub
 

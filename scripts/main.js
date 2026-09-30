@@ -204,16 +204,28 @@ function extractChatText(message) {
  */
 function getSpeakingActor(message) {
   const speaker = message.speaker;
-  if (!speaker) return null;
 
-  if (speaker.token) {
+  if (speaker?.token) {
     const scene = speaker.scene ? game.scenes.get(speaker.scene) : canvas.scene;
     const tokenActor = scene?.tokens?.get(speaker.token)?.actor;
     if (tokenActor) return tokenActor;
   }
 
-  if (!speaker.actor) return null;
-  return game.actors.get(speaker.actor) ?? null;
+  if (speaker?.actor) {
+    const actor = game.actors.get(speaker.actor);
+    if (actor) return actor;
+  }
+
+  // Foundry V14 added an explicit "speaking as" selector to the chat box,
+  // and a message sent in its default "Public" mode carries no
+  // speaker.actor/token at all (confirmed live: every plain typed message
+  // came through as {scene: null, actor: null, token: null}). Every earlier
+  // Foundry version auto-attached the sender's assigned character instead,
+  // which is the behavior this module has always relied on — so fall back
+  // to that same character here. "author" is V14's ChatMessage property for
+  // the sending User; "user" is what V12/V13 called it.
+  const sender = message.author ?? message.user;
+  return sender?.character ?? null;
 }
 
 /**
